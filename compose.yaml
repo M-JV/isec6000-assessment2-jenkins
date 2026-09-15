@@ -1,0 +1,57 @@
+services:
+  # Docker-in-Docker service.
+  # Provides an isolated Docker daemon for Jenkins pipelines.
+  docker:
+    image: docker:dind
+    privileged: true
+
+    environment:
+      # Enables TLS for communication with the Docker daemon.
+      DOCKER_TLS_CERTDIR: /certs
+
+    volumes:
+      # Stores TLS client certificates shared with Jenkins.
+      - docker-certs:/certs/client
+
+      # Persists Docker images, layers and build data.
+      - docker-data:/var/lib/docker
+
+  # Jenkins CI/CD server.
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    depends_on:
+      - docker
+
+    ports:
+      # Host port 8090 avoids your existing use of port 8080.
+      - "8090:8080"
+
+    environment:
+      # Connect Jenkins Docker CLI to the DinD daemon.
+      DOCKER_HOST: tcp://docker:2376
+
+      # Require TLS when connecting to DinD.
+      DOCKER_TLS_VERIFY: "1"
+
+      # Location of the TLS client certificates.
+      DOCKER_CERT_PATH: /certs/client
+
+    volumes:
+      # Persistent Jenkins configuration, jobs and build history.
+      - jenkins-data:/var/jenkins_home
+
+      # Jenkins only needs read access to DinD client certificates.
+      - docker-certs:/certs/client:ro
+
+volumes:
+  # TLS certificates shared between DinD and Jenkins.
+  docker-certs:
+
+  # Persistent Docker daemon/build data.
+  docker-data:
+
+  # Persistent Jenkins configuration and build history.
+  jenkins-data:
