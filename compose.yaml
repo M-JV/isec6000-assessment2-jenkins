@@ -16,6 +16,9 @@ services:
       # Persists Docker images, layers and build data.
       - docker-data:/var/lib/docker
 
+      # Shares the Jenkins workspace with the DinD daemon.
+      - jenkins-workspace:/var/jenkins_home/workspace
+
   # Jenkins CI/CD server.
   jenkins:
     build:
@@ -46,6 +49,9 @@ services:
       # Jenkins only needs read access to DinD client certificates.
       - docker-certs:/certs/client:ro
 
+      # Shared workspace accessible to Jenkins and DinD.
+      - jenkins-workspace:/var/jenkins_home/workspace
+
 volumes:
   # TLS certificates shared between DinD and Jenkins.
   docker-certs:
@@ -55,3 +61,6 @@ volumes:
 
   # Persistent Jenkins configuration and build history.
   jenkins-data:
+
+  # Workspace shared between Jenkins and Docker-in-Docker.
+  jenkins-workspace:
